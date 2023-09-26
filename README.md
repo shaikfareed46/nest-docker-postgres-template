@@ -32,9 +32,22 @@
 $ npm install
 ```
 
-## Running the app
+## Running the Postgres using docker
+```bash
+$ docker run -d \
+	--name some-postgres \
+	-e POSTGRES_PASSWORD=mysecretpassword \
+	-e PGDATA=/var/lib/postgresql/data/pgdata \
+	-v /custom/mount:/var/lib/postgresql/data \
+	postgres
+
+```
+
+
+## Running the app (Assuming your Postgres database is running and make sure the database details are in .env)
 
 ```bash
+
 # development
 $ npm run start
 
@@ -44,6 +57,16 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
+
+
+## Running the app using Docker compose
+
+```bash
+
+$ docker compose up --build
+
+```
+
 
 ## Test
 
