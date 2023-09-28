@@ -3,6 +3,7 @@ import { Order } from '../model/order.model';
 import { OrderDto } from '../dto/order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class OrderService {
@@ -12,14 +13,28 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   async createOrder(orderData: OrderDto): Promise<Order> {
     const order = this.orderRepository.create(orderData);
-    return await this.orderRepository.save(order);
+    const createdOrder = await this.orderRepository.save(order);
+
+    // Send a Kafka event when an order is created
+    const orderEvent = {
+      eventType: 'OrderCreated',
+      order: createdOrder,
+
+      // Add other relevant data
+    };
+
+    await this.kafkaService.send('order-events', JSON.stringify(orderEvent));
+
+    return createdOrder;
   }
 
   async getAllOrders(): Promise<Order[]> {
+    await this.kafkaService.consume('order-events');
     return await this.orderRepository.find();
   }
 

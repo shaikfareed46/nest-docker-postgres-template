@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderService } from './order/order.service';
 import { OrderController } from './order/order.controller';
 import { Order } from './model/order.model';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Order } from './model/order.model';
       autoLoadEntities: true,
     }),
     TypeOrmModule.forFeature([Order]),
+    KafkaModule,
   ],
   controllers: [AppController, OrderController],
   providers: [AppService, OrderService],

@@ -1,39 +1,48 @@
-version: '3.5'
+version: '3.8'
 
 services:
-  db:
-    image: postgres
-    restart: always
-    environment:
-      - POSTGRES_PASSWORD=postgres
-    container_name: postgres
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
-    ports:
-      - '5432:5432'
-
-  app:
+  order-service:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: nest-docker-postgres
-    environment:
-      - PORT=${PORT}
+    container_name: order-ms
     ports:
-      - '3000:3000'
+      - '3000:3000' # Map the app's port to the host
     depends_on:
       - db
-    volumes:
-      - ./src:/app/src
+      - kafka
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      KAFKA_BROKER: kafka:9092
 
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    container_name: nest-pgadmin4
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=pgadmin4
+  db:
+    image: postgres:latest
+    container_name: order-ms-postgres
     ports:
-      - '5050:80'
-    depends_on:
-      - db
+      - '5432:5432' # Map PostgreSQL's port to the host
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: orderdb
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data # Persist PostgreSQL data
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: order-ms-kafka
+    ports:
+      - '9092:9092' # Map Kafka's port to the host
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: order-ms-zookeeper
+    ports:
+      - '2181:2181' # Map ZooKeeper's port to the host
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
